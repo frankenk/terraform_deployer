@@ -100,7 +100,6 @@ def delete_s3_bucket(bucket_name):
             print(f"Error deleting state file bucket {bucket_name}: {error_code} - {e}")
 
 
-# Usage example
 def run_terraform_command(command, s3_state, region, vars=None):
     """
     Runs terraform command. E.g. plan, apply, destroy and so on
