@@ -67,9 +67,6 @@ def check_s3_bucket(bucket_name, region):
         else:
             print(f"Error checking S3 bucket: {e}")
             sys.exit
-    else:
-        print(f"State bucket found: {bucket_name}")
-
 
 def delete_s3_bucket(bucket_name):
     """
@@ -114,6 +111,7 @@ def run_terraform_command(command, s3_state, region, vars=None, no_vars=False):
     }
 
     if no_vars == True:
+        # if true, pass only command
         passed_commands = command
     else:
         # Check if vars are specified, if yes add arguments
@@ -124,21 +122,26 @@ def run_terraform_command(command, s3_state, region, vars=None, no_vars=False):
                 [f"-var='{key}={value}'" for key, value in vars.items()]
             )
         passed_commands = f"{command} -var='aws_region={region}' {variable_args}"
-        
-    print(f"Running --> terraform {passed_commands}")
 
-    # Run the terraform command
-    container = client.containers.run(
-        "hashicorp/terraform:latest",
-        command=passed_commands,
-        volumes=volumes,
-        working_dir="/workspace",
-        remove=True,
-        stdin_open=True,
-        tty=True,
-    )
-    print(container.decode())
+    try:
+        # Run the terraform command
+        container = client.containers.run(
+            "hashicorp/terraform:latest",
+            command=passed_commands,
+            volumes=volumes,
+            working_dir="/workspace",
+            remove=True,
+            stdin_open=True,
+            tty=True,
+        )
+        output = container.decode()
+        print(output)
 
-    # Delete the bucket after destroying
-    if command == "destroy" or command == "destroy -auto-approve":
-        delete_s3_bucket(s3_state)
+        # Delete the bucket after destroying
+        if command == "destroy" or command == "destroy -auto-approve":
+            delete_s3_bucket(s3_state)
+        return output
+    
+    except docker.errors.ContainerError as e:
+        print(f"Failed to run command: {e}")
+        return None    
