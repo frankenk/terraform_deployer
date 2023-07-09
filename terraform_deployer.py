@@ -100,7 +100,7 @@ def delete_s3_bucket(bucket_name):
             print(f"Error deleting state file bucket {bucket_name}: {error_code} - {e}")
 
 
-def run_terraform_command(command, s3_state, region, vars=None):
+def run_terraform_command(command, s3_state, region, vars=None, no_vars=False):
     """
     Runs terraform command. E.g. plan, apply, destroy and so on
     """
@@ -113,15 +113,18 @@ def run_terraform_command(command, s3_state, region, vars=None):
         f"{os.path.expanduser('~')}/.aws": {"bind": "/root/.aws", "mode": "rw"},
     }
 
-    # Check if vars are specified, if yes add arguments
-    if vars is None:
-        variable_args = ""
+    if no_vars == True:
+        passed_commands = command
     else:
-        variable_args = " ".join(
-            [f"-var='{key}={value}'" for key, value in vars.items()]
-        )
-
-    passed_commands = f"{command} -var='aws_region={region}' {variable_args}"
+        # Check if vars are specified, if yes add arguments
+        if vars is None:
+            variable_args = ""
+        else:
+            variable_args = " ".join(
+                [f"-var='{key}={value}'" for key, value in vars.items()]
+            )
+        passed_commands = f"{command} -var='aws_region={region}' {variable_args}"
+        
     print(f"Running --> terraform {passed_commands}")
 
     # Run the terraform command
