@@ -135,7 +135,6 @@ def run_terraform_command(command, s3_state, region, vars=None, no_vars=False):
             tty=True,
         )
         output = container.decode()
-        print(output)
 
         # Delete the bucket after destroying
         if command == "destroy" or command == "destroy -auto-approve":
